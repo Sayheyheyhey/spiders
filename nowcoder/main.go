@@ -1,22 +1,37 @@
 package main
 
 import (
+	"context"
 	"fmt"
-	"github.com/gocolly/colly"
+	"log"
+	"nowcoder/logic"
+	"os"
 )
 
+var logger *log.Logger
+
 func main() {
-	c := colly.NewCollector()
+	ctx := context.TODO()
 
-	// Find and visit all links
-	c.OnHTML("a[rel=prefetch]", func(e *colly.HTMLElement) {
-		e.Request.Visit(e.Attr("href"))
-		fmt.Printf("url:%v\n", e.Attr("href"))
-	})
+	// 日志打印参考: https://studygolang.com/articles/1168
+	logfile, err := os.OpenFile("/Users/maojianing/workspace/tmp/spider_log_20210729", os.O_RDWR|os.O_CREATE, 0666)
+	if err != nil {
+		fmt.Printf("open log failed. err:%v \n", err)
+	}
+	defer logfile.Close()
+	log.SetOutput(logfile)
 
-	c.OnRequest(func(r *colly.Request) {
-		fmt.Println("Visiting", r.URL)
-	})
-
-	c.Visit("https://www.nowcoder.com/search?type=post&order=time&query=grpc&subType=2&tagId=&page=1")
+	kewords := []string{"grpc"}
+	for _, keyword := range kewords {
+		for page := int64(1); page <= 5000; page++ {
+			res, err := logic.HandleSearchPageLogic.GetSubUrl(ctx, keyword, page)
+			if err != nil {
+				log.Printf("keyword:%v page:%v err:%v\n", keyword, page, err)
+				panic(err.Error())
+			}
+			log.Printf("res:%v\n", res)
+			fmt.Printf("res:%v\n", res)
+			return
+		}
+	}
 }
